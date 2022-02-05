@@ -1,0 +1,106 @@
+--[[
+	Delete With Undo v1 by angeld23
+	
+	Default keybinds:
+	[Right Click + Left Ctrl] - Deletes part that your mouse is pointing at.
+	[Right Click + X] - Undo last deletion. Can be repeated until all parts are returned.
+	[Right Click + C] - Undo all deletions. This will return every part at once.
+	
+	(You cannot hold the key and then right click, you must hold right click first. If anyone can fix that, it would be highly appreciated!)
+	
+	Set custom keybinds in the settings below.
+	
+	Report any bugs to angeld23 on v3rm (or Synapse Forums).
+	
+	My Discord: angeld23#5601
+--]]
+
+
+
+--Settings
+deleteKey = Enum.KeyCode.LeftControl --Key to delete the part you are looking at.
+undoKey = Enum.KeyCode.X --Key to undo last deletion.
+undoAllKey = Enum.KeyCode.C --Key to undo all deletions.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--Variables
+plr = game.Players.LocalPlayer
+mouse = plr:GetMouse()
+input = game:GetService("UserInputService")
+storage = game:GetService("ReplicatedStorage")
+undoTable = {}
+
+--Folder to hold deleted parts
+if not storage:FindFirstChild("DeleteWithUndo") then
+	folder = Instance.new("Folder", storage)
+	folder.Name = "DeleteWithUndo"
+end
+--Click detection
+clicking = false
+mouse.Button2Down:connect(function()
+	clicking = true
+end)
+mouse.Button2Up:connect(function()
+	clicking = false
+end)
+
+--Input detection
+input.InputBegan:connect(function(key)
+	if key.KeyCode == deleteKey and clicking then
+		local targetPart = mouse.Target
+		print("Deleted "..targetPart.Name)
+		if not targetPart or not targetPart:IsA("BasePart")then return end
+		local clone = targetPart:Clone()
+		clone.Parent = folder
+		local savedParent = Instance.new("ObjectValue", clone)
+		savedParent.Name = "S_P"
+		savedParent.Value = targetPart.Parent
+		targetPart:Destroy()
+		table.insert(undoTable, #undoTable + 1, clone)
+	end
+	if key.KeyCode == undoKey and #undoTable > 0 and clicking then
+		local targetPart = undoTable[#undoTable]
+		if not targetPart.S_P.Value then print("This part's parent was deleted! Setting parent to game.Workspace.") targetPart.Parent = workspace targetPart.S_P:Destroy() table.remove(undoTable, #undoTable) else
+		print("Undone deletion of "..targetPart.Name)
+		targetPart.Parent = targetPart.S_P.Value
+		targetPart.S_P:Destroy()
+		table.remove(undoTable, #undoTable)
+		end
+	end
+	if key.KeyCode == undoAllKey and clicking then
+		for i = 1, #undoTable do
+			local targetPart = undoTable[#undoTable]
+			print(targetPart.Name)
+			if not targetPart.S_P.Value then print("This part's parent was deleted! Setting parent to game.Workspace.") targetPart.Parent = workspace targetPart.S_P:Destroy() table.remove(undoTable, #undoTable) else
+			targetPart.Parent = targetPart.S_P.Value
+			targetPart.S_P:Destroy()
+			table.remove(undoTable, #undoTable)
+			end
+		end
+		print("Undone deletion of all parts.")
+	end
+end)
+
+warn("Delete With Undo v1 by angeld23 loaded!")
+warn("Report bugs to:")
+warn("angeld23 on v3rm")
+warn("angeld23 on Synapse Forums")
+warn("angeld23#5601 on discord")
